@@ -11,6 +11,7 @@ FACE_NAMES = [
     '-z',
 ]
 
+# By definition
 # face_index x component
 CENTERS = numpy.array([
     [1, 0, 0],
@@ -21,38 +22,43 @@ CENTERS = numpy.array([
     [0, 0, -1],
 ])
 
+# OpenGL/WebGL cubemaps are weird, they use a _left-handed_ coordinate
+# system!!! Also it wasn't immediately obvious to me that the UV direction
+# is based on the _inside_ of the cube. This page helped explain this:
+# https://www.khronos.org/opengl/wiki/Cubemap_Texture#Upload_and_orientation
+
 # face_index x component
 U_DIRECTIONS = numpy.array([
-    [0, 1, 0],
-    [-1, 0, 0],
-    [0, 1, 0],
-    [0, -1, 0],
+    [0, 0, 1],
     [1, 0, 0],
-    [0, 1, 0]
+    [-1, 0, 0],
+    [0, 0, -1],
+    [1, 0, 0],
+    [1, 0, 0]
 ])
 
 # face_index x component
 V_DIRECTIONS = numpy.array([
+    [0, 1, 0],
     [0, 0, 1],
-    [0, 0, 1],
-    [-1, 0, 0],
-    [0, 0, 1],
-    [0, 0, 1],
-    [1, 0, 0]
+    [0, 1, 0],
+    [0, 1, 0],
+    [0, 0, -1],
+    [0, 1, 0]
 ])
 
 def make_face(equirectangular, face_index, size): # :P
-    j, i = numpy.indices((size, size), dtype=numpy.float32)
+    i, j = numpy.indices((size, size), dtype=numpy.float32)
     # u and v are in the range [-1, 1]
-    u = 2 * i / (size - 1) - 1
-    v = 2 * j / (size - 1) - 1
+    u = 2 * j / (size - 1) - 1
+    v = 2 * i / (size - 1) - 1
 
     # compute the 3D position on the unit cube
     center = CENTERS[face_index]
     u_dir = U_DIRECTIONS[face_index]
     v_dir = V_DIRECTIONS[face_index]
 
-    # Because I always forget how broadcasting works:
+    # Because I always forget how NumPy broadcasting works:
     # u: N x N
     # u_dir: 3
     # u[:, :, None]: N x N x 1
@@ -67,14 +73,14 @@ def make_face(equirectangular, face_index, size): # :P
     z = position[:, :, 2]
 
     # convert to spherical coordinates. We don't need the radius, only
-    # the direction (lon, lat)
-    longitude = numpy.arctan2(y, x)
+    # the direction (lon, lat). Remember that we're in a left-handed coordinate
+    # system!
+    longitude = numpy.arctan2(x, y)
     s = numpy.sqrt(x ** 2 + y ** 2)
     latitude = numpy.arctan2(z, s)
 
     lon_range = [numpy.min(longitude), numpy.max(longitude)]
     lat_range = [numpy.min(latitude), numpy.max(latitude)]
-    print(f"{FACE_NAMES[face_index]} - longitude: {lon_range}, lat: {lat_range}")
 
     # scale longitude [-pi, pi] -> [0, 1]
     # and latitude [-pi/2, pi/2] -> [0, 1]
@@ -89,9 +95,12 @@ def make_face(equirectangular, face_index, size): # :P
 
     x_range = [numpy.min(equi_x), numpy.max(equi_x)]
     y_range = [numpy.min(equi_y), numpy.max(equi_y)]
-    print(f"{FACE_NAMES[face_index]} - equi_x: {x_range}, equi_y: {y_range}")
 
-    face = cv2.remap(equirectangular, equi_x.astype(numpy.float32), equi_y.astype(numpy.float32), cv2.INTER_LINEAR)
+    face = cv2.remap(
+        equirectangular,
+        equi_x.astype(numpy.float32),
+        equi_y.astype(numpy.float32), 
+        cv2.INTER_LINEAR)
     return face
 
 def main(args):
