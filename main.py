@@ -2,6 +2,7 @@ import argparse
 import cv2
 import numpy
 
+# Names of of the 6 faces for labeling the filenames.
 FACE_NAMES = [
     '+x',
     '+y',
@@ -47,8 +48,24 @@ V_DIRECTIONS = numpy.array([
     [0, 1, 0]
 ])
 
-def make_face(equirectangular, face_index, size): # :P
+def make_face(equirectangular, face_index, size): 
+    """
+    :P
+
+    Jokes aside, this function reprojects the equirectangular panorama to
+    one of the 6 views of a cubemap.
+
+    :param numpy.ndarray equirectangular: The equirectangular panag
+    :param int face_index: Integer from 0-5 to select one of the 6 faces of
+        the cubemap. See `FACE_NAMES` 
+    :param int size: The size of the output texture. This should be a power of
+        two.
+    :return: One face as part of the cubemap.
+    :rtype: numpy.ndarray
+    """
+    # make grid indices for the output image.
     i, j = numpy.indices((size, size), dtype=numpy.float32)
+
     # u and v are in the range [-1, 1]
     u = 2 * j / (size - 1) - 1
     v = 2 * i / (size - 1) - 1
@@ -59,6 +76,7 @@ def make_face(equirectangular, face_index, size): # :P
     v_dir = V_DIRECTIONS[face_index]
 
     # Because I always forget how NumPy broadcasting works:
+    # Matrix: Shape
     # u: N x N
     # u_dir: 3
     # u[:, :, None]: N x N x 1
@@ -79,9 +97,6 @@ def make_face(equirectangular, face_index, size): # :P
     s = numpy.sqrt(x ** 2 + y ** 2)
     latitude = numpy.arctan2(z, s)
 
-    lon_range = [numpy.min(longitude), numpy.max(longitude)]
-    lat_range = [numpy.min(latitude), numpy.max(latitude)]
-
     # scale longitude [-pi, pi] -> [0, 1]
     # and latitude [-pi/2, pi/2] -> [0, 1]
     (W, H, _) = equirectangular.shape
@@ -93,9 +108,7 @@ def make_face(equirectangular, face_index, size): # :P
     equi_x *= (W - 1)
     equi_y *= (H - 1)
 
-    x_range = [numpy.min(equi_x), numpy.max(equi_x)]
-    y_range = [numpy.min(equi_y), numpy.max(equi_y)]
-
+    # Let OpenCV handle the inverse projection for us :)
     face = cv2.remap(
         equirectangular,
         equi_x.astype(numpy.float32),
@@ -104,19 +117,43 @@ def make_face(equirectangular, face_index, size): # :P
     return face
 
 def main(args):
+    """
+    Compute 6 cubemap images from an equirectangular image, and write them
+    into the output/ directory.
+    """
     equirectangular = args.image_equirectangular
+    prefix = args.prefix
 
     for i in range(6):
         face_img = make_face(equirectangular, i, args.size)
         face_name = FACE_NAMES[i]
-        cv2.imwrite(f"skybox{face_name}.png", face_img)
+        filename = f"output/{prefix}{face_name}.png"
+        print(f"Computing face {filename}")
+        cv2.imwrite(filename, face_img)
 
 def image(fname):
+    """
+    Argument type conversion function for an image. This just throws exceptions
+    if the read fails.
+
+    :param str fname: The filename of the image to load
+    :return: The image if OpenCV was able to read it.
+    :rtype: numpy.ndarray
+    """
     return cv2.imread(fname)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("image_equirectangular", type=image, help="Image to turn into a cubemap. It must be a 2:1 equirectangular image")
-    parser.add_argument("-s", '--size', type=int, default=2048, help="Texture size for each face of the cubemap Defaults to 2048")
+    parser.add_argument("image_equirectangular",
+        type=image,
+        help="Image to turn into a cubemap. It must be a 2:1 equirectangular image")
+    parser.add_argument("-s", '--size',
+        type=int,
+        default=2048,
+        help="Texture size for each face of the cubemap Defaults to 2048")
+    parser.add_argument("-p", "--prefix",
+        default="skybox",
+        help="Prefix for the filename. For example, if this is 'skybox', output files will look like 'output/skybox+x.png'")
     args = parser.parse_args()
+
     main(args)
