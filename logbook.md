@@ -1,4 +1,4 @@
-# Panorama to Cubemap
+# Panorama to Cubemap Logbook
 
 ## 2021-05-08 Setup
 
@@ -48,3 +48,17 @@ Next Steps:
 2. Make some test data to include with the repo
 3. Make a standalone CesiumJS page to view the results.
 4. Make a README including example output
+
+## 2021-05-16 Cleanup
+
+Today I did a cleanup pass on the code. I documented the functions in the code
+and started to put together a readme.
+
+...I realized I might havve a bug in my code. It seems that `+z` and `-z` are
+swapped. This is likely because when testing I had temporarily swapped these
+images. I'll have to investigate this further.
+
+Next Steps:
+- Double-check my coordinate axes.
+- Make a standalone CesiumJS page to view the results
+- Finish README

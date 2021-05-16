@@ -1,3 +1,5 @@
 .vscode
 *.jpg
 *.png
+!figures/*.jpg
+!figures/*.png

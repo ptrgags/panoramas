@@ -2,6 +2,18 @@ import argparse
 import cv2
 import numpy
 
+"""
+Convert a 2:1 equirectangular panorama to 6 cubemap images.
+
+This is optimized for use with CesiumJS, which uses a Z-up, right-handed
+coordinate system. Consequently, the cubemap output will look a little different
+than if this was designed for general purpose OpenGL or WebGL cubemaps which
+use a Y-up, left-handed coordinate system.
+
+This script was written as a quick utility for myself, I tried to keep it
+simple.
+"""
+
 # Names of of the 6 faces for labeling the filenames.
 FACE_NAMES = [
     '+x',
