@@ -62,3 +62,13 @@ Next Steps:
 - Double-check my coordinate axes.
 - Make a standalone CesiumJS page to view the results
 - Finish README
+
+## 2021-05-25 Added a Viewer
+
+Today I added an HTML page that sets up a CesiumJS viewer to display the
+output cubemap as a skybox.
+
+Next Steps:
+- Sort out the coordinate axes. It might be helpful to make a template image to
+help determine which way is up.
+- Finish README

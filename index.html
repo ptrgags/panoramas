@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <style>
+        html, body {
+            margin: 0px;
+            height: 100%;
+            overflow: hidden;
+        }
+    </style>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.81/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.81/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+    <script>
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5MzU4MWM1YS1hODY4LTQ5YjUtYjJhMS00MzkwNzMyMzA3OWYiLCJpZCI6MTg5MTksImlhdCI6MTYyMTkzODc5Nn0.3KIts1GcnO7lQyv5F7FY2Bjg2LeTH4otu1obR00hEaI';
+
+        // For now, it'll always use the default output name
+        const skyboxPrefix = 'skybox';
+
+        const viewer = new Cesium.Viewer("cesiumContainer", {
+            animation: false,
+            baseLayerPicker: false,
+            timeline: false,
+            geocoder: false,
+            sceneModePicker: false,
+            skyBox: new Cesium.SkyBox({
+                sources: {
+                    positiveX: `output/${skyboxPrefix}+x.png`,
+                    negativeX: `output/${skyboxPrefix}-x.png`,
+                    positiveY: `output/${skyboxPrefix}+y.png`,
+                    negativeY: `output/${skyboxPrefix}-y.png`,
+                    positiveZ: `output/${skyboxPrefix}+z.png`,
+                    negativeZ: `output/${skyboxPrefix}-z.png`,
+                }
+            })
+        });
+    </script>
+</body>
