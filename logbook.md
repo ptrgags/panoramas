@@ -72,3 +72,31 @@ Next Steps:
 - Sort out the coordinate axes. It might be helpful to make a template image to
 help determine which way is up.
 - Finish README
+
+## 2021-06-02 New Approach
+
+This past week, I've been thinking about how to generalize this panorama
+code. I took inspiration from the [models of the hyperbolic plane](https://en.wikipedia.org/wiki/Hyperbolic_geometry#Connection_between_the_models):
+
+* The equirectangular image represents an entire sphere, (2 hemisphere models)
+* The Poincaré disk is the stereographic projection of this hemisphere from -1z
+* The hyperboloid model is a different form of stereographic projection from -1z
+* The half-plane model is a stereographic projection from -1x
+* The Beltrami-Klein disk is an orthographic projection of the hemisphere
+* The cubemap is 6 gnomonic projections from the origin
+
+Another thing is you could always rotate the sphere before projecting. This
+will likely be more flexible than picking the projection points.
+
+There's more to say on this, but I'm short on time today.
+
+So far I've split the main projection code into classes for an ImagePlane
+as well as a UnitSphere. 
+
+One thing I realized: I might have a mistake in how I interpret the
+equirectangular map: My longitude increases CCW, but the image from a
+panorama is really the _inside_ of the cube, not the outside. This would mean
+longitude should increase _clockwise_ - this may be why some of my texture
+orientations seem weird (compounded by the WebGL and CesiumJS conventions).
+I really need to study this more until I understand which way is up.
+
