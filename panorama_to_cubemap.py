@@ -86,7 +86,14 @@ class ImagePlane:
         self.v_dir = v_dir
     
     def get_indices(self):
-        return numpy.indices(self.shape, dtype=numpy.float32)
+        """
+        Get indices for the pixels in the underlying image
+
+        :return: an array containing the i, j indices.
+        :rtype: numpy.ndarray
+        """
+        (H, W, _) = self.shape
+        return numpy.indices((H, W), dtype=numpy.float32)
     
     def to_world(self, indices):
         """
@@ -96,7 +103,7 @@ class ImagePlane:
         i, j = indices
 
         # Rescale to UV coordinates. u is to the right, v is up.
-        (H, W) = self.shape
+        (H, W, _) = self.shape
         u = rescale(0, W - 1, -1, 1, j)
         v = rescale(0, H - 1, 1, -1, i)
 
@@ -139,34 +146,72 @@ class ImagePlane:
         v = px * vx + py * vy + pz * vz
 
         # rescale to pixel coordinates. u is up, v is down
-        (H, W) = self.shape
+        (H, W, _) = self.shape
         i = rescale(-1, 1, H - 1, 0, v)
         j = rescale(-1, 1, 0, W -1, u)
 
         return (i, j)
 
 class UnitSphere:
+    """
+    A unit sphere, textured with a spherical panorama. The sphere is viewed
+    from the inside.
+    """
     def __init__(self, image):
+        """
+        Constructor
+
+        :param numpy.ndarray image: An equirectangular image representing a
+            spherical panorama. This should be an image with a 2:1 aspect
+            ratio.
+        """
         self.image = image
         self.shape = image.shape
 
     def get_indices(self):
-        return numpy.indices(self.shape, dtype=numpy.float32)
+        """
+        Get indices for the pixels in the underlying image
+
+        :return: an array containing the i, j indices.
+        :rtype: numpy.ndarray
+        """
+        (H, W, _) = self.shape
+        return numpy.indices((H, W), dtype=numpy.float32)
 
     def to_world(self, indices):
+        """
+        Convert from pixels of the image to world coordinates. Remember that
+        the equirectangular image is the inside of the sphere.
+        
+        :param numpy.ndarray indices: the indices array from get_indices()
+        :return: The world coordinates arrays as a triple (x, y, z)
+        :rtype: tuple
+        """
         i, j = indices
         
-        (H, W) = self.shape
+        # Convert indices to longitude/latitude. The longitude increases to
+        # the right, and the latitude increases upwards
+        (H, W, _) = self.shape
         longitude = rescale(0, W - 1, -numpy.pi, numpy.pi, j)
         latitude = rescale(0, H - 1, numpy.pi / 2, -numpy.pi / 2, i)
 
+        # horizontal radius
         s = numpy.cos(latitude)
+
+        # The equirectangular image is on the inside of the sphere,
+        # so flip y so it goes clockwise
         x = s * numpy.cos(longitude)
-        y = s * numpy.sin(longitude)
+        y = -s * numpy.sin(longitude)
         z = numpy.sin(latitude)
         return (x, y, z)
     
     def to_indices(self, world_coords):
+        """
+        Convert from world coordinates on the sphere to coordinates of the
+        equirectangular image
+
+        :param tuple indices: tuple of indices from
+        """
         (x, y, z) = world_coords
         longitude = numpy.arctan2(y, x)
         s = numpy.sqrt(x ** 2 + y ** 2)
@@ -177,89 +222,6 @@ class UnitSphere:
         j = rescale(-numpy.pi, numpy.pi, 0, W - 1, longitude)
 
         return (i, j)
-
-def make_face(equirectangular, face_index, size): 
-    """
-    :P
-
-    Jokes aside, this function reprojects the equirectangular panorama to
-    one of the 6 views of a cubemap.
-
-    :param numpy.ndarray equirectangular: The equirectangular panag
-    :param int face_index: Integer from 0-5 to select one of the 6 faces of
-        the cubemap. See `FACE_NAMES` 
-    :param int size: The size of the output texture. This should be a power of
-        two.
-    :return: One face as part of the cubemap.
-    :rtype: numpy.ndarray
-    """
-    # make grid indices for the output image.
-    i, j = numpy.indices((size, size), dtype=numpy.float32)
-
-    # u and v are in the range [-1, 1]
-    u = rescale(0, size - 1, -1, 1, j)
-    v = rescale(0, size - 1, -1, 1, i)
-    #u = 2 * j / (size - 1) - 1
-    #v = 2 * i / (size - 1) - 1
-
-    # compute the 3D position on the unit cube
-    center = CENTERS[face_index]
-    u_dir = U_DIRECTIONS[face_index]
-    v_dir = V_DIRECTIONS[face_index]
-
-    # Because I always forget how NumPy broadcasting works:
-    # Matrix: Shape
-    # u: N x N
-    # u_dir: 3
-    # u[:, :, None]: N x N x 1
-    # u_dir[None, None, :]: 1 x 1 x 3
-    # product: N x N x 3
-    position = (
-        center[None, None, :] +
-        u[:, :, None] * u_dir[None, None, :] +
-        v[:, :, None] * v_dir[None, None, :])
-    x = position[:, :, 0]
-    y = position[:, :, 1]
-    z = position[:, :, 2]
-
-    # convert to spherical coordinates. We don't need the radius, only
-    # the direction (lon, lat). Remember that we're in a left-handed coordinate
-    # system!
-    longitude = numpy.arctan2(x, y)
-    s = numpy.sqrt(x ** 2 + y ** 2)
-    latitude = numpy.arctan2(z, s)
-
-    '''
-    # scale longitude [-pi, pi] -> [0, 1]
-    # and latitude [-pi/2, pi/2] -> [0, 1]
-    (W, H, _) = equirectangular.shape
-    equi_x = rescale(-numpy.pi, numpy.pi, 0, (W - 1), longitude)
-    equi_y = rescale(-numpy.pi / 2, numpy.pi / 2, (H - 1), 0, latitude)
-
-    #equi_x = 0.5 * longitude / numpy.pi + 0.5
-    #equi_y = latitude / numpy.pi + 0.5
-    
-    # flip y to get image space coordinates
-    equi_y = 1.0 - equi_y
-
-    # scale to match the dimensions of the image
-    (H, W, _) = equirectangular.shape
-    equi_x *= (W - 1)
-    equi_y *= (H - 1)
-    '''
-
-    # scale from lon/lat to pixels of the equirectangular image
-    (H, W, _) = equirectangular.shape
-    equi_x = rescale(-numpy.pi, numpy.pi, 0, (W - 1), longitude)
-    equi_y = rescale(-numpy.pi / 2, numpy.pi / 2, (H - 1), 0, latitude)
-
-    # Let OpenCV handle the inverse projection for us :)
-    face = cv2.remap(
-        equirectangular,
-        equi_x.astype(numpy.float32),
-        equi_y.astype(numpy.float32), 
-        cv2.INTER_LINEAR)
-    return face
 
 def project(source, destination, dst_to_src_projection):
     dst_indices = destination.get_indices()
@@ -276,9 +238,28 @@ def project(source, destination, dst_to_src_projection):
     )
 
 def plane_to_sphere(world_coords):
-    x, y, z = world_coords
+    (x, y, z) = world_coords
     length = numpy.sqrt(x ** 2 + y ** 2 + z ** 2)
     return (x / length, y / length, z / length)
+
+def sphere_to_plane(world_coords):
+    """
+    Project coordinates from the sphere onto the plane. This only handles
+    the +x axis at the moment
+    """
+    (x, y, z) = world_coords
+
+    # project the vector onto the center axis
+    # r proj center = (r dot center)center = ((x, y, z) dot (1, 0, 0))center 
+    # = (x, 0, 0)
+    # compute the rejection, that is r - r proj center
+    # = (x, y, z) - (x, 0, 0) = (0, y, z)
+    # compute the scale factor
+    # |plane| / |rejection| = |center| / |projection|
+    # |plane| / |rejection| = 1 / x
+    # so scale up the rejection by (1/x) (remember, x < 1) and add an offset
+    # of center to get the projected coordinates. No trig functions needed!
+    return (numpy.ones_like(x), y / x, z / x)
 
 def main(args):
     """
@@ -287,7 +268,7 @@ def main(args):
     """
     sphere = UnitSphere(args.image_equirectangular)
     plus_x = ImagePlane(
-        numpy.zeros((args.size, args.size)),
+        numpy.zeros((args.size, args.size, 3)),
         numpy.array([1, 0, 0]),
         # expected u=-y, v=z, actual u=-z, v=y
         numpy.array([0, 0, -1]),
@@ -297,7 +278,7 @@ def main(args):
     cv2.imwrite("output/skybox+x.png", plus_x.image)
 
     plus_y = ImagePlane(
-        numpy.zeros((args.size, args.size)),
+        numpy.zeros((args.size, args.size, 3)),
         # WHY IS THIS NEGATIVE Y???
         numpy.array([0, -1, 0]),
         numpy.array([1, 0, 0]),
@@ -307,7 +288,7 @@ def main(args):
     cv2.imwrite("output/skybox+y.png", plus_y.image)
 
     plus_z = ImagePlane(
-        numpy.zeros((args.size, args.size)),
+        numpy.zeros((args.size, args.size, 3)),
         numpy.array([0, 0, 1]),
         numpy.array([1, 0, 0]),
         numpy.array([0, 1, 0])
@@ -316,7 +297,7 @@ def main(args):
     cv2.imwrite("output/skybox+z.png", plus_z.image)
 
     neg_x = ImagePlane(
-        numpy.zeros((args.size, args.size)),
+        numpy.zeros((args.size, args.size, 3)),
         numpy.array([-1, 0, 0]),
         numpy.array([0, 0, 1]),
         numpy.array([0, 1, 0])
@@ -325,7 +306,7 @@ def main(args):
     cv2.imwrite("output/skybox-x.png", neg_x.image)
 
     neg_y = ImagePlane(
-        numpy.zeros((args.size, args.size)),
+        numpy.zeros((args.size, args.size, 3)),
         # WHY IS THIS NEGATIVE Y???
         numpy.array([0, 1, 0]),
         numpy.array([1, 0, 0]),
@@ -335,7 +316,7 @@ def main(args):
     cv2.imwrite("output/skybox-y.png", neg_y.image)
 
     neg_z = ImagePlane(
-        numpy.zeros((args.size, args.size)),
+        numpy.zeros((args.size, args.size, 3)),
         numpy.array([0, 0, -1]),
         numpy.array([-1, 0, 0]),
         numpy.array([0, 1, 0])
@@ -343,15 +324,9 @@ def main(args):
     project(sphere, neg_z, plane_to_sphere)
     cv2.imwrite("output/skybox-z.png", neg_z.image)
 
-    '''
-    prefix = args.prefix
-    for i in range(6):
-        face_img = make_face(equirectangular, i, args.size)
-        face_name = FACE_NAMES[i]
-        filename = f"output/{prefix}{face_name}.png"
-        print(f"Computing face {filename}")
-        cv2.imwrite(filename, face_img)
-    '''
+    out_sphere = UnitSphere(numpy.zeros(args.image_equirectangular.shape))
+    project(plus_x, out_sphere, sphere_to_plane)
+    cv2.imwrite("output/equirectangular.png", out_sphere.image)
 
 def image(fname):
     """

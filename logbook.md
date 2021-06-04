@@ -100,3 +100,26 @@ longitude should increase _clockwise_ - this may be why some of my texture
 orientations seem weird (compounded by the WebGL and CesiumJS conventions).
 I really need to study this more until I understand which way is up.
 
+## 2021-06-04 Projecting the Other Way
+
+When I made the `UnitSphere` and `ImagePlane` classes the other day, I had
+included the inverse functions as well, but I hadn't tested that. So I decided
+to add the reverse projection too. Got it producing an image, but two issues
+here:
+
+1. It's backwards! probably another "panorama is CW" issue.
+2. Projecting the sphere covers the _whole_ image, not just a single plane. This
+    ends up projecting the plane twice, once upside down.
+
+I think I need a dedicated `CubeMap` class that internally stores 6
+`ImagePlane`s. It should have the same interface as the other classes, but
+delegates to the appropriate image plane as needed. This class could also
+handle the orientation issues I was having. The one downside is I'll need to
+rethink the projection functions since there's 6 targets here, not just 1.
+That said, multiple targets will be common. E.g. Poincaré disk needs two maps,
+hyperbolic also 2 maps, etc.
+
+Next Steps:
+
+* Continue to investigate the orientation issues
+* Design a `CubeMap` class
