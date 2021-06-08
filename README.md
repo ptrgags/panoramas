@@ -12,7 +12,7 @@ with little error checking. This is not intended for production use.
 Basic Usage:
 
 ```
-python panorama_to_cubemap.py input_panorama.jpg
+python main.py input_panorama.jpg
 ```
 
 This script converts a 360° panorama in equirectangular projection, i.e.
@@ -24,11 +24,7 @@ Input example:
 Output example:
 ![Output Cubemap](figures/output_cubemap.png)
 
-You'll notice that this cubemap has an unusual arrangement relative to
-[what OpenGL/WebGL uses](https://www.khronos.org/opengl/wiki/Cubemap_Texture#Upload_and_orientation).
-This is because I intend to use this for artistic skyboxes in CesiumJS. Cesium
-uses a z-up, right handed coordinate system (True Equator Mean Equinox)
-[according to the docs](https://cesium.com/docs/cesiumjs-ref-doc/SkyBox.html?classFilter=skybox)
+Note: the output is 6 images. They are labeled according to a z-up coordinate system compatible with the skybox in CesiumJS (See [SkyBox documentation](https://cesium.com/docs/cesiumjs-ref-doc/SkyBox.html?classFilter=skybox))
 
 ### Visualizing output
 
@@ -39,4 +35,4 @@ repo as a static site, e.g. with `http-server` (a NodeJS package)
 or `python -m http.server` (Python3 built-in module) since browsers may block
 the images otherwise.
 
-TODO: Screenshot
+![CesiumJS Viewer Example](figures/cesium-viewer.png)
