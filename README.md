@@ -7,6 +7,15 @@ designed specifically for interoperability with
 I made these scripts for my own artistic uses. These scripts are written simply
 with little error checking. This is not intended for production use.
 
+## Installation
+
+The only dependencies are Numpy and OpenCV. These can be installed via
+`pip`
+
+```
+pip install -r requirements.txt
+```
+
 ## Usage
 
 Basic Usage:
