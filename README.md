@@ -7,7 +7,7 @@ designed specifically for interoperability with
 I made these scripts for my own artistic uses. These scripts are written simply
 with little error checking. This is not intended for production use.
 
-## `panorama_to_cubemap.py`
+## Usage
 
 Basic Usage:
 
