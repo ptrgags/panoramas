@@ -3,3 +3,4 @@
 *.png
 !figures/*.jpg
 !figures/*.png
+__pycache__/

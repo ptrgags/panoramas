@@ -123,3 +123,16 @@ Next Steps:
 
 * Continue to investigate the orientation issues
 * Design a `CubeMap` class
+
+## 2021-06-08 Added a Cubemap Class
+
+Today I added a `Cubemap` class to make it easier to put together a cubemap.
+This handles the 6 faces, so you can think of it as one big cubemap texture.
+The inverse projection will be trickier to implement, so I'm going to defer
+that until I have a use case.
+
+Along the way, I also made sure the coordinate systems were consistent
+in context. Since the equirectangular image uses a left-handed coordinate
+system (since it's the inside of the sphere), by the end, the UV directions
+were consistent with the OpenGL conventions, and also consistent with
+Cesium. I guess I just had a bug in my equirectangular code.
