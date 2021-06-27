@@ -14,3 +14,16 @@ def rescale(in_min, in_max, out_min, out_max, value):
     delta_out = out_max - out_min
     delta_in = in_max - in_min
     return delta_out / delta_in * (value - in_min) + out_min
+
+def array_stats(array):
+    """
+    For debugging, print a NumPy array's stats
+
+    :param numpy.ndarray array: the array to print
+    """
+    min_val = array.min()
+    max_val = array.max()
+    avg_val = array.mean()
+    print(f"min: {min_val}")
+    print(f"max: {max_val}")
+    print(f"avg: {avg_val}")

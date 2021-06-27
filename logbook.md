@@ -169,9 +169,31 @@ several images and combine them. Fortunately that's easy for stereographic
 projection, as there are only 2 images, and they are identified by the
 sign of the `z` coordinate on the unit sphere in world space.
 
-However, I'm running into some NumPy errors, and I'm only getting a single line of pixels in the output image. I need to check my calculations
-and see if I need to do any special `Inf`/`NaN` handling.
+However, I'm running into some NumPy errors, and I'm only getting a single line
+of pixels in the output image. I need to check my calculations and see if I need
+to do any special `Inf`/`NaN` handling.
 
 Next steps:
 * Debug why I'm not getting a full image
 * Update the README with new usage instructions.
+
+## 2021-06-27 A Simple Fix
+
+Today I investigated why I was getting so many errors. It turns out I had
+written `1 - abs(z)` instead of `1 + abs(z)` in the denominator. Always nice
+when something can be fixed with a 1 character change!
+
+I also updated the README with some example input/output. Though I'm not quite
+happy with it, I really should find a good image that has a different
+northern and southern hemisphere. But that's best handled 
+[here](https://github.com/ptrgags/processing-sketchbook/tree/master/HyperbolicConnections)
+
+Next Steps:
+* Add support for rotating the globe
+* Allow converting from stereographic to cubemap directly. No intermediate
+    images should be generated.
+* Try other projections such as:
+  * Poincaré half-plane model
+  * hyperbolic plane (would require a separate sketch that can render a 
+    hyperboloid
+  * octahedral projection maybe?

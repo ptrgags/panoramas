@@ -1,5 +1,6 @@
 import numpy
 from geometry.imageplane import ImagePlane
+from util import array_stats
 
 ORIGIN = numpy.array([0, 0, 0])
 PLUS_X = numpy.array([1, 0, 0])
@@ -47,7 +48,7 @@ class StereographicProjection:
 
         # Each point is projected to the same point as the
         # point at (x, y, -z), so abs(z) will handle both at once!
-        denominator = 1 - abs(z)
+        denominator = 1 + abs(z)
         
         # (x, y, z) projects to (a, b, 0)
         a = x / denominator
