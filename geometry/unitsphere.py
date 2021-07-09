@@ -8,6 +8,9 @@ class UnitSphere:
     A unit sphere, textured with a spherical panorama. The sphere is viewed
     from the inside.
     """
+
+    DEFAULT_SHAPE = (1800, 3600, 3)
+
     def __init__(self, image=None, shape=None):
         """
         Constructor
@@ -21,19 +24,9 @@ class UnitSphere:
             self.shape = image.shape
         else:
             self.image = None
-            self.shape = shape
+            self.shape = shape or self.DEFAULT_SHAPE
 
-    def get_indices(self):
-        """
-        Get indices for the pixels in the underlying image
-
-        :return: an array containing the i, j indices.
-        :rtype: numpy.ndarray
-        """
-        (H, W, _) = self.shape
-        return numpy.indices((H, W), dtype=numpy.float32)
-
-    def to_world(self, indices):
+    def get_world_coords(self):
         """
         Convert from pixels of the image to world coordinates. Remember that
         the equirectangular image is the inside of the sphere.
@@ -42,7 +35,8 @@ class UnitSphere:
         :return: The world coordinates arrays as a triple (x, y, z)
         :rtype: tuple
         """
-        i, j = indices
+        (H, W, _) = self.shape
+        i, j = numpy.indices((H, W), dtype=numpy.float32)
         
         # Convert indices to longitude/latitude. The longitude increases to
         # the right, and the latitude increases upwards
@@ -92,3 +86,8 @@ class UnitSphere:
             i.astype(numpy.float32),
             cv2.INTER_LINEAR
         )
+
+    def write(self, fname_pattern):
+        fname = fname_pattern.format("")
+        print(f"Writing {fname}")
+        cv2.imwrite(fname, self.image)

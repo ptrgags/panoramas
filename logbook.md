@@ -136,3 +136,64 @@ in context. Since the equirectangular image uses a left-handed coordinate
 system (since it's the inside of the sphere), by the end, the UV directions
 were consistent with the OpenGL conventions, and also consistent with
 Cesium. I guess I just had a bug in my equirectangular code.
+
+## 2021-06-06 Start Adding Stereographic
+
+Today I added a `StereographicProjection` class which holds two image
+planes: one for the northern hemisphere, one for the southern hemisphere.
+I also updated the CLI to support more images and input/output formats.
+
+One neat thing is I learned that the projection is almost the same, except
+for the sign of z in the denominator, so absolute value can be used to
+roll 2 projections into 1!
+
+```
+(x, y, z) -> (a, b, 0)
+
+Northern Hemisphere: (z positive)
+a = x / (1 + z)
+b = y / (1 + z)
+
+Southern Hemisphere: (z negative)
+a = x / (1 - z)
+b = y / (1 - z)
+
+In general:
+a = x / (1 + |z|)
+b = y / (1 + |z|)
+```
+
+The tricky thing is to handle the projection since we have 2 input images,
+and `cv2.remap()` doesn't handle more than one image. So I need to produce
+several images and combine them. Fortunately that's easy for stereographic
+projection, as there are only 2 images, and they are identified by the
+sign of the `z` coordinate on the unit sphere in world space.
+
+However, I'm running into some NumPy errors, and I'm only getting a single line
+of pixels in the output image. I need to check my calculations and see if I need
+to do any special `Inf`/`NaN` handling.
+
+Next steps:
+* Debug why I'm not getting a full image
+* Update the README with new usage instructions.
+
+## 2021-06-27 A Simple Fix
+
+Today I investigated why I was getting so many errors. It turns out I had
+written `1 - abs(z)` instead of `1 + abs(z)` in the denominator. Always nice
+when something can be fixed with a 1 character change!
+
+I also updated the README with some example input/output. Though I'm not quite
+happy with it, I really should find a good image that has a different
+northern and southern hemisphere. But that's best handled 
+[here](https://github.com/ptrgags/processing-sketchbook/tree/master/HyperbolicConnections)
+
+Next Steps:
+* Add support for rotating the globe
+* Allow converting from stereographic to cubemap directly. No intermediate
+    images should be generated.
+* Try other projections such as:
+  * Poincaré half-plane model
+  * hyperbolic plane (would require a separate sketch that can render a 
+    hyperboloid
+  * octahedral projection maybe?

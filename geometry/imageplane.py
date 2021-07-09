@@ -4,6 +4,8 @@ import numpy
 from util import rescale
 
 class ImagePlane:
+    DEFAULT_SHAPE = (2048, 2048, 3)
+
     def __init__(self, center, u_dir, v_dir, image=None, shape=None):
         self.center = center
         self.u_dir = u_dir
@@ -13,7 +15,7 @@ class ImagePlane:
             self.image = image
             self.shape = image.shape
         else:
-            self.shape = shape
+            self.shape = shape or self.DEFAULT_SHAPE
     
     def get_world_coords(self):
         """
@@ -69,6 +71,19 @@ class ImagePlane:
         j = rescale(-1, 1, 0, W -1, u)
 
         return (i, j)
+
+    def lookup_colors(self, world_coords):
+        if self.image is None:
+            raise RuntimeError(
+                "lookup_colors only works for image planes with an image")
+
+        i, j = self.to_indices(world_coords)
+        return cv2.remap(
+            self.image,
+            j.astype(numpy.float32),
+            i.astype(numpy.float32),
+            cv2.INTER_LINEAR
+        )
     
     def write(self, fname):
         print(f"Writing {fname}")
