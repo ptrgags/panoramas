@@ -4,6 +4,8 @@ Utility Scripts for working with 360° panorama images. Some scripts are
 designed specifically for interoperability with
 [CesiumJS](https://github.com/CesiumGS/cesium).
 
+:warning: ARCHIVED - Due to a Assignment of Inventions Agreement I signed when I started working at Cesium, this copyright for this project was assigned to my employer Cesium GS, Inc. This project is still open-source under the Apache 2.0 license. However, I choose not to maintain this repo anymore, and have archived it.
+
 I made these scripts for my own artistic uses. These scripts are written simply
 with little error checking. This is not intended for production use.
 
